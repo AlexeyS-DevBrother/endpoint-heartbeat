@@ -52,7 +52,7 @@ export class AppService {
       const { data, status, statusText } = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (data && status < 400) return { status, statusText };
+      if (data && status < 400) return { status, statusText: 'Service is up!' };
     } catch (err) {
       const { status, statusText } = err.response;
       return { status, statusText };
