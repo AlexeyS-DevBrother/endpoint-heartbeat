@@ -1,12 +1,13 @@
 const exchangeDataURL = 'https://exchange-data-service.cryptosrvc.com/v1';
 const tradeServiceURL = 'https://trade-service-sls.cryptosrvc.com';
 const tokenURL =
-  'https://authentication.cryptosrvc.com/api/user_authentication/exchangeToken';
+  'https://authentication.cryptosrvc.com/api/user_authentication';
 
 export const urls = {
   exchangeDataURL,
   tradeServiceURL,
-  tokenURL,
+  getAccessTokenURL: tokenURL + '/exchangeToken',
+  refreshTokenURL: tokenURL + '/refreshAccessToken',
   instruments: exchangeDataURL + '/instruments',
   currencies: exchangeDataURL + '/currencies',
   quotes: exchangeDataURL + '/quotes',

@@ -9,7 +9,6 @@ import {
 } from '@nestjs/common';
 import { AppService } from './app.service';
 import { CreateRfqQuoteDto } from './dto/create-rfq-quote.dto';
-import { GetTokenDto } from './dto/get-token.dto';
 import { RfqQuoteInfo } from './pipes/rfq-quote-info.pipe';
 
 @Controller()
@@ -21,9 +20,9 @@ export class AppController {
     return this.appService.getItem(id);
   }
 
-  @Post('/instruments')
-  getInstruments(@Body() payload: GetTokenDto) {
-    return this.appService.getInstruments(payload);
+  @Get('/instruments')
+  getInstruments(@Query('exchange') exchange: string) {
+    return this.appService.getInstruments(exchange);
   }
 
   @Get('/currencies')
@@ -36,24 +35,24 @@ export class AppController {
     return this.appService.getQuotes(exchange);
   }
 
-  @Post('/trade/accounts')
-  getTradeAccounts(@Body() payload: GetTokenDto) {
-    return this.appService.getTradeAccounts(payload);
+  @Get('/trade/accounts')
+  getTradeAccounts() {
+    return this.appService.getTradeAccounts();
   }
 
-  @Post('/trade/transactions')
-  getTradeTransactions(@Body() payload: GetTokenDto) {
-    return this.appService.getTradeTransactions(payload);
+  @Get('/trade/transactions')
+  getTradeTransactions() {
+    return this.appService.getTradeTransactions();
   }
 
-  @Post('/trade/orders/open')
-  getTradeOpenOrders(@Body() payload: GetTokenDto) {
-    return this.appService.getTradeOpenOrders(payload);
+  @Get('/trade/orders/open')
+  getTradeOpenOrders() {
+    return this.appService.getTradeOpenOrders();
   }
 
-  @Post('/trade/orders/closed')
-  getTradeClosedOrders(@Body() payload: GetTokenDto) {
-    return this.appService.getTradeClosedOrders(payload);
+  @Get('/trade/orders/closed')
+  getTradeClosedOrders() {
+    return this.appService.getTradeClosedOrders();
   }
 
   @Get('/swagger')
