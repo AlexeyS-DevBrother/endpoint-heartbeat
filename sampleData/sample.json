@@ -1,9 +1,6 @@
 {
   "admin_service_envs": {
-    "SS": [
-      "4.44_a",
-      "4.44_dev"
-    ]
+    "SS": ["4.44_a", "4.44_dev"]
   },
   "auth": {
     "M": {
@@ -185,6 +182,20 @@
       },
       "discountFactor": {
         "N": "0.75"
+      }
+    }
+  },
+  "healthcheck": {
+    "M": {
+      "exchange": {
+        "M": {
+          "username": {
+            "S": "xxx"
+          },
+          "password": {
+            "S": "xxx"
+          }
+        }
       }
     }
   }

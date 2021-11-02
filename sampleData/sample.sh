@@ -14,3 +14,8 @@ aws dynamodb get-item \
   --table-name global_exchanges \
   --key file://sampleData/key.json \
   --endpoint-url http://localhost:8000
+
+aws dynamodb delete-item \
+  --table-name global_exchanges \
+  --key file://sampleData/key.json \
+  --endpoint-url http://localhost:8000
