@@ -11,6 +11,7 @@ import { join } from 'node:path';
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'),
+      exclude: ['/api*'],
     }),
     ConfigModule.forRoot({
       validationSchema: Joi.object({

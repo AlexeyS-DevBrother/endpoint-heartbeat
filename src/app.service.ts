@@ -47,73 +47,118 @@ export class AppService {
 
   async getInstruments(exchange: string) {
     const url = `${urls.instruments}?exchange=${exchange}`;
-    const token = await this.getToken();
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const token = await this.getToken();
+      const { data, status, statusText } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (data && status < 400) return { status, statusText };
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getCurrencies(exchange: string) {
     const url = `${urls.currencies}?exchange=${exchange}`;
-    const { data } = await axios.get(url);
-    return data;
+    try {
+      const { data } = await axios.get(url);
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getQuotes(exchange: string) {
     const url = `${urls.quotes}?exchange=${exchange}`;
-    const { data } = await axios.get(url);
-    return data;
+    try {
+      const { data } = await axios.get(url);
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getTradeAccounts() {
     const url = urls.trade.accounts;
-    const token = await this.getToken();
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getTradeTransactions() {
     const url = urls.trade.transactions;
-    const token = await this.getToken();
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getTradeOpenOrders() {
     const url = urls.trade.orders.open;
-    const token = await this.getToken();
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getTradeClosedOrders() {
     const url = urls.trade.orders.closed;
-    const token = await this.getToken();
-    const { data } = await axios.get(url, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const token = await this.getToken();
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async getSwaggerData() {
     const url = urls.swagger;
-    const { data } = await axios.get(url);
-    return data;
+    try {
+      const { data } = await axios.get(url);
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 
   async createRfqQuote(payload: CreateRfqQuoteDto) {
-    const url = 'https://rfq.cryptosrvc.com/v1/quote';
-    const token = await this.getToken();
-    const { data } = await axios.post(url, payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return data;
+    try {
+      const url = 'https://rfq.cryptosrvc.com/v1/quote';
+      const token = await this.getToken();
+      const { data } = await axios.post(url, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return data;
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
   }
 }
