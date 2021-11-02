@@ -1,7 +1,5 @@
-import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as AWS from 'aws-sdk';
-import * as fs from 'node:fs/promises';
-import * as path from 'node:path';
 import axios from 'axios';
 import { TokenResponse } from './types/token-response.type';
 import { GetTokenDto } from './dto/get-token.dto';
@@ -13,34 +11,7 @@ const ddb = new AWS.DynamoDB({
 });
 
 @Injectable()
-export class AppService implements OnModuleInit {
-  async onModuleInit() {
-    const params = {
-      TableName: 'global_exchanges',
-      AttributeDefinitions: [
-        {
-          AttributeName: 'id',
-          AttributeType: 'S',
-        },
-      ],
-      KeySchema: [
-        {
-          AttributeName: 'id',
-          KeyType: 'HASH',
-        },
-      ],
-      ProvisionedThroughput: {
-        ReadCapacityUnits: 5,
-        WriteCapacityUnits: 5,
-      },
-    };
-    await ddb.createTable(params).promise();
-    const filePath = path.join(process.cwd(), 'sampleData', 'sample.json');
-    const data = await fs.readFile(filePath, { encoding: 'utf-8' });
-    const item = JSON.parse(data);
-    await ddb.putItem({ TableName: 'global_exchanges', Item: item }).promise();
-  }
-
+export class AppService {
   async getItem(id: string) {
     const { Item } = await ddb
       .getItem({ Key: { id: { S: id } }, TableName: 'global_exchanges' })

@@ -7,10 +7,10 @@ aws dynamodb create-table \
 
 aws dynamodb put-item \
   --table-name global_exchanges \
-  --item file://sample.json \
+  --item file://sampleData/sample.json \
   --endpoint-url http://localhost:8000
 
 aws dynamodb get-item \
   --table-name global_exchanges \
-  --key file://key.json \
+  --key file://sampleData/key.json \
   --endpoint-url http://localhost:8000
