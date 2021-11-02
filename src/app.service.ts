@@ -4,6 +4,7 @@ import axios from 'axios';
 import { TokenResponse } from './types/token-response.type';
 import { GetTokenDto } from './dto/get-token.dto';
 import { CreateRfqQuoteDto } from './dto/create-rfq-quote.dto';
+import { urls } from './urls';
 
 const ddb = new AWS.DynamoDB({
   endpoint: 'http://localhost:8000',
@@ -14,25 +15,6 @@ const ddb = new AWS.DynamoDB({
 @Injectable()
 export class AppService {
   private accessToken: string;
-  private exchangeDataURL = 'https://exchange-data-service.cryptosrvc.com/v1';
-  private tradeServiceURL = 'https://trade-service-sls.cryptosrvc.com';
-  private tokenURL =
-    'https://authentication.cryptosrvc.com/api/user_authentication/exchangeToken';
-
-  private urls = {
-    instruments: this.exchangeDataURL + '/instruments', // ?exchange
-    currencies: this.exchangeDataURL + '/currencies', // ?exchange
-    quotes: this.exchangeDataURL + '/quotes', // ?exchange
-    trade: {
-      accounts: this.tradeServiceURL + '/v1/trade/accounts',
-      transactions: this.tradeServiceURL + '/v1/trade/transactions',
-      orders: {
-        open: this.tradeServiceURL + '/v1/trade/orders/open',
-        closed: this.tradeServiceURL + '/v1/trade/orders/closed',
-      },
-    },
-    swagger: this.tradeServiceURL + '/swagger/#',
-  };
 
   async getItem(id: string) {
     const { Item } = await ddb
@@ -43,7 +25,7 @@ export class AppService {
 
   private async getToken(payload: GetTokenDto) {
     try {
-      const { data } = await axios.post<TokenResponse>(this.tokenURL, payload);
+      const { data } = await axios.post<TokenResponse>(urls.tokenURL, payload);
       this.accessToken = data.exchange_access_token;
       return data.exchange_access_token;
     } catch (err) {
@@ -52,7 +34,7 @@ export class AppService {
   }
 
   async getInstruments(payload: GetTokenDto) {
-    const url = `${this.urls.instruments}?exchange=${payload.exchange}`;
+    const url = `${urls.instruments}?exchange=${payload.exchange}`;
     const token = this.accessToken
       ? this.accessToken
       : await this.getToken(payload);
@@ -63,19 +45,19 @@ export class AppService {
   }
 
   async getCurrencies(exchange: string) {
-    const url = `${this.urls.currencies}?exchange=${exchange}`;
+    const url = `${urls.currencies}?exchange=${exchange}`;
     const { data } = await axios.get(url);
     return data;
   }
 
   async getQuotes(exchange: string) {
-    const url = `${this.urls.quotes}?exchange=${exchange}`;
+    const url = `${urls.quotes}?exchange=${exchange}`;
     const { data } = await axios.get(url);
     return data;
   }
 
   async getTradeAccounts(payload: GetTokenDto) {
-    const url = this.urls.trade.accounts;
+    const url = urls.trade.accounts;
     const token = this.accessToken
       ? this.accessToken
       : await this.getToken(payload);
@@ -86,7 +68,7 @@ export class AppService {
   }
 
   async getTradeTransactions(payload: GetTokenDto) {
-    const url = this.urls.trade.transactions;
+    const url = urls.trade.transactions;
     const token = this.accessToken
       ? this.accessToken
       : await this.getToken(payload);
@@ -97,7 +79,7 @@ export class AppService {
   }
 
   async getTradeOpenOrders(payload: GetTokenDto) {
-    const url = this.urls.trade.orders.open;
+    const url = urls.trade.orders.open;
     const token = this.accessToken
       ? this.accessToken
       : await this.getToken(payload);
@@ -108,7 +90,7 @@ export class AppService {
   }
 
   async getTradeClosedOrders(payload: GetTokenDto) {
-    const url = this.urls.trade.orders.closed;
+    const url = urls.trade.orders.closed;
     const token = this.accessToken
       ? this.accessToken
       : await this.getToken(payload);
@@ -119,7 +101,7 @@ export class AppService {
   }
 
   async getSwaggerData() {
-    const url = this.urls.swagger;
+    const url = urls.swagger;
     const { data } = await axios.get(url);
     return data;
   }
@@ -139,16 +121,3 @@ export class AppService {
     return data;
   }
 }
-
-// /instruments               -- DONE
-// /currencies?exchange=DEMO  -- DONE
-// /quotes?exchange=DEMO      -- DONE
-// /trade/accounts            -- DONE
-// /trade/transactions        -- DONE
-// /trade/orders/closed       -- DONE
-// /trade/orders/open         -- DONE
-// /swagger/#                 -- DONE
-//
-// -- IN PROGRESS --
-// POST https://rfq.cryptosrvc.com/v1/quote { instrument: "BTCUSDT", quantity: 0.001, fees_in_price: true, dry_run: true }
-//
