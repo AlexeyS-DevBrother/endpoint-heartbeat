@@ -1,48 +1,43 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get('/item/:id')
-  getItem(@Param('id') id: string) {
-    return this.appService.getItem(id);
-  }
-
   @Get('/instruments')
-  getInstruments() {
-    return this.appService.getInstruments();
+  getInstruments(@Query('exchange') exchange: string) {
+    return this.appService.getInstruments(exchange);
   }
 
   @Get('/currencies')
-  getCurrencies() {
-    return this.appService.getCurrencies();
+  getCurrencies(@Query('exchange') exchange: string) {
+    return this.appService.getCurrencies(exchange);
   }
 
   @Get('/quotes')
-  getQuotes() {
-    return this.appService.getQuotes();
+  getQuotes(@Query('exchange') exchange: string) {
+    return this.appService.getQuotes(exchange);
   }
 
   @Get('/trade/accounts')
-  getTradeAccounts() {
-    return this.appService.getTradeAccounts();
+  getTradeAccounts(@Query('exchange') exchange: string) {
+    return this.appService.getTradeAccounts(exchange);
   }
 
   @Get('/trade/transactions')
-  getTradeTransactions() {
-    return this.appService.getTradeTransactions();
+  getTradeTransactions(@Query('exchange') exchange: string) {
+    return this.appService.getTradeTransactions(exchange);
   }
 
   @Get('/trade/orders/open')
-  getTradeOpenOrders() {
-    return this.appService.getTradeOpenOrders();
+  getTradeOpenOrders(@Query('exchange') exchange: string) {
+    return this.appService.getTradeOpenOrders(exchange);
   }
 
   @Get('/trade/orders/closed')
-  getTradeClosedOrders() {
-    return this.appService.getTradeClosedOrders();
+  getTradeClosedOrders(@Query('exchange') exchange: string) {
+    return this.appService.getTradeClosedOrders(exchange);
   }
 
   @Get('/swagger')
@@ -51,7 +46,7 @@ export class AppController {
   }
 
   @Get('/rfq-quote')
-  createRfqQuote() {
-    return this.appService.createRfqQuote();
+  createRfqQuote(@Query('exchange') exchange: string) {
+    return this.appService.createRfqQuote(exchange);
   }
 }
