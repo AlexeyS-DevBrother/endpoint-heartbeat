@@ -1,15 +1,5 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Post,
-  Query,
-  UsePipes,
-} from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AppService } from './app.service';
-import { CreateRfqQuoteDto } from './dto/create-rfq-quote.dto';
-import { RfqQuoteInfo } from './pipes/rfq-quote-info.pipe';
 
 @Controller()
 export class AppController {
@@ -60,9 +50,8 @@ export class AppController {
     return this.appService.getSwaggerData();
   }
 
-  @Post('/rfq-quote')
-  @UsePipes(RfqQuoteInfo)
-  createRfqQuote(@Body() rfqQuoteInfo: CreateRfqQuoteDto) {
-    return this.appService.createRfqQuote(rfqQuoteInfo);
+  @Get('/rfq-quote')
+  createRfqQuote() {
+    return this.appService.createRfqQuote();
   }
 }
