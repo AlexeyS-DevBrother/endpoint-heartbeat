@@ -20,11 +20,12 @@ export class AppService implements OnModuleInit {
 
   async onModuleInit() {
     const items = await this.dbService.getCredsByScanning();
-    items.forEach((item) => this.getToken(item));
+    const promises = items.map(this.getToken.bind(this));
+    await Promise.all(promises);
   }
 
   @ThruCacheAsync(1800 * 1000)
-  private async getToken(tokenPayload: TokenPayload) {
+  private getToken(tokenPayload: TokenPayload) {
     return this.authService.getToken(tokenPayload);
   }
 

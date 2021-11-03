@@ -6,11 +6,11 @@ import { urls } from '../urls';
 
 @Injectable()
 export class AuthService {
-  async getToken(credsWithExchange: TokenPayload): Promise<string> {
+  async getToken(tokenPayload: TokenPayload): Promise<string> {
     try {
       const { data } = await axios.post<TokenResponse>(
         urls.getAccessTokenURL,
-        credsWithExchange,
+        tokenPayload,
       );
       return data.exchange_access_token;
     } catch (err) {

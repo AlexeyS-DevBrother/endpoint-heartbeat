@@ -16,9 +16,10 @@ import { DbService } from './db/db.service';
     }),
     ConfigModule.forRoot({
       validationSchema: Joi.object({
-        username: Joi.string().required(),
-        password: Joi.string().required(),
-        exchange: Joi.string().required(),
+        instrument: Joi.string().required(),
+        quantity: Joi.string().required(),
+        fees_in_price: Joi.string().required(),
+        dry_run: Joi.string().required(),
       }),
     }),
   ],
