@@ -6,6 +6,7 @@ import { urls } from './urls';
 import { AuthService } from './auth/auth.service';
 import { TokenData } from './types/token-data.type';
 import { ConfigService } from '@nestjs/config';
+import { ThruCacheAsync } from './decorators/thru-cache-async.decorator';
 
 const ddb = new AWS.DynamoDB({
   endpoint: 'http://localhost:8000',
@@ -15,9 +16,6 @@ const ddb = new AWS.DynamoDB({
 
 @Injectable()
 export class AppService {
-  private accessToken: string;
-  private refreshToken: string;
-  private expiration: number;
   private rfqPayload: CreateRfqQuoteDto;
 
   constructor(
@@ -32,22 +30,9 @@ export class AppService {
     return Item;
   }
 
+  @ThruCacheAsync(1800 * 1000)
   private async getToken() {
-    let tokenData: TokenData;
-    if (!this.accessToken) {
-      tokenData = await this.authService.getToken();
-    } else {
-      if (Date.now() < this.expiration) return this.accessToken;
-      tokenData = await this.authService.refreshAccessToken(this.refreshToken);
-    }
-    this.cacheTokenData(tokenData);
-    return this.accessToken;
-  }
-
-  private cacheTokenData(tokenData: TokenData) {
-    this.accessToken = tokenData.access;
-    this.refreshToken = tokenData.refresh;
-    this.expiration = tokenData.exp;
+    return this.authService.getToken();
   }
 
   private async _makeRequestWithoutToken(url: string) {

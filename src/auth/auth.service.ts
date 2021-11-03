@@ -15,17 +15,13 @@ export class AuthService {
     password: this.configService.get('password'),
   };
 
-  async getToken(): Promise<TokenData> {
+  async getToken(): Promise<string> {
     try {
       const { data } = await axios.post<TokenResponse>(
         urls.getAccessTokenURL,
         this.#payload,
       );
-      return {
-        access: data.exchange_access_token,
-        refresh: data.exchange_refresh_token,
-        exp: Date.now() + data.expires_in,
-      };
+      return data.exchange_access_token;
     } catch (err) {
       throw new BadRequestException('Payload is not valid!');
     }
