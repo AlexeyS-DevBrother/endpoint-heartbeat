@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -11,18 +11,18 @@ export class AppController {
   }
 
   @Get('/instruments')
-  getInstruments(@Query('exchange') exchange: string) {
-    return this.appService.getInstruments(exchange);
+  getInstruments() {
+    return this.appService.getInstruments();
   }
 
   @Get('/currencies')
-  getCurrencies(@Query('exchange') exchange: string) {
-    return this.appService.getCurrencies(exchange);
+  getCurrencies() {
+    return this.appService.getCurrencies();
   }
 
   @Get('/quotes')
-  getQuotes(@Query('exchange') exchange: string) {
-    return this.appService.getQuotes(exchange);
+  getQuotes() {
+    return this.appService.getQuotes();
   }
 
   @Get('/trade/accounts')

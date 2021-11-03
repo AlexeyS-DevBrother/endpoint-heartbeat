@@ -50,11 +50,20 @@ export class AppService {
     this.expiration = tokenData.exp;
   }
 
-  async getInstruments(exchange: string) {
-    const url = `${urls.instruments}?exchange=${exchange}`;
+  private async _makeRequestWithoutToken(url: string) {
+    try {
+      const { data, status } = await axios.get(url);
+      if (data && status < 400) return { status, statusText: 'Service is up!' };
+    } catch (err) {
+      const { status, statusText } = err.response;
+      return { status, statusText };
+    }
+  }
+
+  private async _makeRequestWithToken(url: string) {
     try {
       const token = await this.getToken();
-      const { data, status, statusText } = await axios.get(url, {
+      const { data, status } = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data && status < 400) return { status, statusText: 'Service is up!' };
@@ -64,101 +73,54 @@ export class AppService {
     }
   }
 
-  async getCurrencies(exchange: string) {
-    const url = `${urls.currencies}?exchange=${exchange}`;
-    try {
-      const { data, status, statusText } = await axios.get(url);
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+  async getInstruments() {
+    const exchange = this.configService.get('exchange');
+    const url = `${urls.instruments}?exchange=${exchange}`;
+    return this._makeRequestWithToken(url);
   }
 
-  async getQuotes(exchange: string) {
+  async getCurrencies() {
+    const exchange = this.configService.get('exchange');
+    const url = `${urls.currencies}?exchange=${exchange}`;
+    return this._makeRequestWithoutToken(url);
+  }
+
+  async getQuotes() {
+    const exchange = this.configService.get('exchange');
     const url = `${urls.quotes}?exchange=${exchange}`;
-    try {
-      const { data, status, statusText } = await axios.get(url);
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+    return this._makeRequestWithoutToken(url);
+  }
+
+  async getSwaggerData() {
+    return this._makeRequestWithoutToken(urls.swagger);
   }
 
   async getTradeAccounts() {
     const url = urls.trade.accounts;
-    try {
-      const token = await this.getToken();
-      const { data, status, statusText } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+    return this._makeRequestWithToken(url);
   }
 
   async getTradeTransactions() {
     const url = urls.trade.transactions;
-    try {
-      const token = await this.getToken();
-      const { data, status, statusText } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+    return this._makeRequestWithToken(url);
   }
 
   async getTradeOpenOrders() {
     const url = urls.trade.orders.open;
-    try {
-      const token = await this.getToken();
-      const { data, status, statusText } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+    return this._makeRequestWithToken(url);
   }
 
   async getTradeClosedOrders() {
     const url = urls.trade.orders.closed;
-    try {
-      const token = await this.getToken();
-      const { data, status, statusText } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
-  }
-
-  async getSwaggerData() {
-    const url = urls.swagger;
-    try {
-      const { data, status, statusText } = await axios.get(url);
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
-    } catch (err) {
-      const { status, statusText } = err.response;
-      return { status, statusText };
-    }
+    return this._makeRequestWithToken(url);
   }
 
   async createRfqQuote() {
-    const payload = this.getRfqPayload();
+    const payload = this._getRfqPayload();
     try {
       const url = 'https://rfq.cryptosrvc.com/v1/quote';
       const token = await this.getToken();
-      const { data, status, statusText } = await axios.post(url, payload, {
+      const { data, status } = await axios.post(url, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (data && status < 400) return { status, statusText: 'Service is up!' };
@@ -168,25 +130,16 @@ export class AppService {
     }
   }
 
-  private getRfqPayload() {
+  private _getRfqPayload() {
     if (this.rfqPayload) return this.rfqPayload;
-    const raw = {
-      instrument: this.configService.get('instrument'),
-      quantity: this.configService.get('quantity'),
-      fees_in_price: this.configService.get('fees_in_price'),
-      dry_run: this.configService.get('dry_run'),
-    };
-    const payload = this._transformPayload(raw);
-    this.rfqPayload = payload;
+    const keys = ['instrument', 'quantity', 'fees_in_price', 'dry_run'];
+    const raw: { [key: string]: string } = {};
+    keys.forEach((key) => (raw[key] = this.configService.get(key)));
+    this.rfqPayload = this._transformPayload(raw);
     return this.rfqPayload;
   }
 
-  private _transformPayload(raw: {
-    instrument: string;
-    quantity: string;
-    fees_in_price: string;
-    dry_run: string;
-  }): CreateRfqQuoteDto {
+  private _transformPayload(raw: { [key: string]: string }): CreateRfqQuoteDto {
     const quantity = +raw.quantity;
     const dry_run = this._parseBoolean(raw.dry_run);
     const fees_in_price = this._parseBoolean(raw.fees_in_price);
