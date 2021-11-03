@@ -24,8 +24,8 @@ export class AppService implements OnModuleInit {
   }
 
   @ThruCacheAsync(1800 * 1000)
-  private async getToken(credsWithExchange: TokenPayload) {
-    return this.authService.getToken(credsWithExchange);
+  private async getToken(tokenPayload: TokenPayload) {
+    return this.authService.getToken(tokenPayload);
   }
 
   private async _makeRequestWithoutToken(url: string) {
