@@ -57,21 +57,29 @@ export class AppService implements OnModuleInit {
       const { request: req, ...res } = err.response;
       (response = res), (request = req), (status = res.status);
     }
-    request = JSON.parse(JSON.stringify(request, this._getCircularReplacer()));
+    request = this._recursiveRemove(request);
     const entity = { request, response, responseTime, status, timestamp };
     await this.dbService.save(exchange, url, entity);
   }
 
-  private _getCircularReplacer = () => {
+  private _recursiveRemove(obj) {
     const seen = new WeakSet();
-    return (key, value) => {
-      if (typeof value === 'object' && value !== null) {
-        if (seen.has(value)) return;
-        seen.add(value);
+    const removeCircular = (obj, result = {}) => {
+      seen.add(obj);
+      const entries = Object.entries(obj);
+      // eslint-disable-next-line prefer-const
+      for (let [key, value] of entries) {
+        if (typeof value === 'object' && value !== null) {
+          if (seen.has(value)) continue;
+          seen.add(value);
+          value = removeCircular(value);
+          result[key] = value;
+        } else if (typeof value !== 'object') result[key] = value + '';
       }
-      return value;
+      return result;
     };
-  };
+    return removeCircular(obj);
+  }
 
   async getInstruments(exchange: string) {
     const url = `${urls.instruments}?exchange=${exchange}`;
