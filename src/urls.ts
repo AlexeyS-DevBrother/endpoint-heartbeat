@@ -16,7 +16,7 @@ export const urls = {
     transactions: tradeServiceURL + '/v1/trade/transactions',
     orders: {
       open: tradeServiceURL + '/v1/trade/orders/open',
-      closed: tradeServiceURL + '/v1/trade/orders/closed',
+      closed: tradeServiceURL + '/v1/trade/orders/close',
     },
   },
   swagger: tradeServiceURL + '/swagger/#',

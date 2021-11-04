@@ -2,6 +2,7 @@ import { DynamoDB } from 'aws-sdk';
 import { Injectable } from '@nestjs/common';
 import { TokenPayload } from '../types/token-payload.interface';
 import { ICredentials } from '../types/credentials.interface';
+import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
 
 const ddb = new DynamoDB.DocumentClient({
   endpoint: 'http://localhost:8000',
@@ -33,5 +34,14 @@ export class DbService {
       })
       .promise();
     return Item.healthcheck.exchange;
+  }
+
+  async save(exchange: string, endpoint: string, entity: IHealthcheckEntity) {
+    await ddb
+      .put({
+        TableName: 'endpoint_healthchecks',
+        Item: { exchange, endpoint, ...entity },
+      })
+      .promise();
   }
 }

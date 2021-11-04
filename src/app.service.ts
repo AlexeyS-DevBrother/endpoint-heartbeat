@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import axios from 'axios';
 import { CreateRfqQuoteDto } from './dto/create-rfq-quote.dto';
 import { urls } from './urls';
@@ -41,23 +41,37 @@ export class AppService implements OnModuleInit {
   }
 
   private async _makeRequestWithToken(url: string, exchange: string) {
+    let timestamp: number, responseTime: number, status: number;
+    let request, response;
     try {
       const creds = await this.dbService.getCredsById(exchange);
-      const token = await this.getToken({
-        username: creds.username,
-        password: creds.password,
-        exchange,
-      });
-      const { data, status } = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (data && status < 400) return { status, statusText: 'Service is up!' };
+      const token = await this.getToken({ ...creds, exchange });
+      const headers = { Authorization: `Bearer ${token}` };
+      timestamp = Date.now();
+      const { request: req, ...res } = await axios.get(url, { headers });
+      responseTime = Date.now() - timestamp;
+      (response = res), (request = req), (status = res.status);
     } catch (err) {
-      const status = err.response?.status || err.statusCode;
-      const statusText = err.response?.statusText || err.code;
-      return { status, statusText };
+      responseTime = Date.now() - timestamp;
+      if (!timestamp) throw new BadRequestException('Exchange is invalid!');
+      const { request: req, ...res } = err.response;
+      (response = res), (request = req), (status = res.status);
     }
+    request = JSON.parse(JSON.stringify(request, this._getCircularReplacer()));
+    const entity = { request, response, responseTime, status, timestamp };
+    await this.dbService.save(exchange, url, entity);
   }
+
+  private _getCircularReplacer = () => {
+    const seen = new WeakSet();
+    return (key, value) => {
+      if (typeof value === 'object' && value !== null) {
+        if (seen.has(value)) return;
+        seen.add(value);
+      }
+      return value;
+    };
+  };
 
   async getInstruments(exchange: string) {
     const url = `${urls.instruments}?exchange=${exchange}`;
