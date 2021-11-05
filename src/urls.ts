@@ -6,7 +6,7 @@ const tradeServiceURL = 'https://trade-service-sls.cryptosrvc.com';
 const tokenURL =
   'https://authentication.cryptosrvc.com/api/user_authentication';
 
-const urls = {
+export const urls = {
   instruments: exchangeDataURL + '/instruments',
   currencies: exchangeDataURL + '/currencies',
   quotes: exchangeDataURL + '/quotes',

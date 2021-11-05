@@ -4,11 +4,9 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import * as Joi from 'joi';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AuthService } from './auth/auth.service';
 import { join } from 'node:path';
-import { DbService } from './db/db.service';
-import { UtilsService } from './utils/utils.service';
-import { ChecksService } from './checks/checks.service';
+import { DbModule } from './db/db.module';
+import { ChecksModule } from './checks/checks.module';
 
 @Module({
   imports: [
@@ -24,8 +22,10 @@ import { ChecksService } from './checks/checks.service';
         dry_run: Joi.string().required(),
       }),
     }),
+    DbModule,
+    ChecksModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService, DbService, UtilsService, ChecksService],
+  providers: [AppService],
 })
 export class AppModule {}
