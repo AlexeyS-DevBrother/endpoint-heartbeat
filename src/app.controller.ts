@@ -41,8 +41,8 @@ export class AppController {
   }
 
   @Get('/swagger')
-  getSwaggerData() {
-    return this.appService.getSwaggerData();
+  getSwaggerData(@Query('exchange') exchange: string) {
+    return this.appService.getSwaggerData(exchange);
   }
 
   @Get('/rfq-quote')

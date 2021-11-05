@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthService } from './auth/auth.service';
 import { join } from 'node:path';
 import { DbService } from './db/db.service';
+import { UtilsService } from './utils/utils.service';
 
 @Module({
   imports: [
@@ -24,6 +25,6 @@ import { DbService } from './db/db.service';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService, AuthService, DbService],
+  providers: [AppService, AuthService, DbService, UtilsService],
 })
 export class AppModule {}
