@@ -76,4 +76,14 @@ export const endpoints: Endpoint[] = [
       dry_run: true,
     },
   },
+  {
+    getUrl: () => urls.getAccessTokenURL,
+    tokenRequired: false,
+    method: HTTP_METHODS.POST,
+    payload: {
+      username: '',
+      password: '',
+      exchange: '',
+    },
+  },
 ];

@@ -47,7 +47,6 @@ window.onload = () => {
     classList.remove('stop');
     clearInterval(interval);
     button.textContent = 'Get results';
-    dataContainer.classList.remove('active');
   };
 
   const setActive = (classList, button) => {
@@ -73,5 +72,6 @@ window.onload = () => {
     `;
     isActive = false;
     stop(controlButton.classList, controlButton);
+    dataContainer.classList.remove('active');
   });
 };

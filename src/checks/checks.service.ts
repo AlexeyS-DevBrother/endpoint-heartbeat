@@ -62,9 +62,6 @@ export class ChecksService {
       const args: RequestArgs = { url, exchange, method };
       if (endpoint.tokenRequired) args.headers = headers;
       if (method === HTTP_METHODS.POST) args.payload = endpoint.payload;
-
-      // console.log({ url, exchange, method });
-
       return this._makeRequest(args);
     });
     await Promise.all(promises);
