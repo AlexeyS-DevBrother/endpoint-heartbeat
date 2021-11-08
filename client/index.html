@@ -5,20 +5,31 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
   <script src="index.js"></script>
   <title>Endpoint Health Checker</title>
 </head>
 
 <body>
-  <table>
-    <thead>
-      <tr>
-        <th>Health Check</th>
-      </tr>
-    </thead>
-    <tbody id="data">
-    </tbody>
-  </table>
+  <div>
+    <p>Choose the exchange and click the button below to retreive the services healthcheck results:</p>
+    <select name="exchange" id="exchange">
+      <option value="DEMO">DEMO</option>
+      <option value="">Option 2</option>
+      <option value="">Option 3</option>
+      <option value="">Option 4</option>
+      <option value="">Option 5</option>
+    </select>
+  </div>
+  <div class="button-container">
+    <button class="control-button get-results">Get results</button>
+    <button class="control-button clear">Clear</button>
+  </div>
+  <hr />
+  <div class="data-container">
+    <h4>Nothing to display</h4>
+    <p>Click <code>Get results</code> button to start polling services.</p>
+  </div>
 </body>
 
 </html>

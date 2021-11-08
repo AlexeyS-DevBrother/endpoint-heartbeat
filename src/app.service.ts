@@ -30,4 +30,8 @@ export class AppService implements OnModuleInit {
     await checkEndpointsByExchanges();
     setInterval(checkEndpointsByExchanges, 15 * 1000);
   }
+
+  getChecks(exchange: string) {
+    return this.dbService.getHealthchecksByExchange(exchange);
+  }
 }

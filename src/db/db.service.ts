@@ -4,6 +4,9 @@ import { TokenPayload } from '../types/token-payload.interface';
 import { ICredentials } from '../types/credentials.interface';
 import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
 
+type ScanInput = DynamoDB.DocumentClient.ScanInput;
+type ItemList = DynamoDB.DocumentClient.ItemList;
+
 const ddb = new DynamoDB.DocumentClient({
   endpoint: 'http://localhost:8000',
   region: 'localhost',
@@ -12,13 +15,12 @@ const ddb = new DynamoDB.DocumentClient({
 @Injectable()
 export class DbService {
   async getCredsByScanning(): Promise<TokenPayload[]> {
-    const { Items } = await ddb
-      .scan({
-        TableName: 'global_exchanges',
-        ProjectionExpression: 'healthcheck, id',
-      })
-      .promise();
-    return Items.map((item) => {
+    const params: ScanInput = {
+      TableName: 'global_exchanges',
+      ProjectionExpression: 'healthcheck, id',
+    };
+    const items = await this._recursiveScan(params);
+    return items.map((item) => {
       const creds = item.healthcheck.exchange;
       const exchange = item.id;
       return { ...creds, exchange };
@@ -43,5 +45,33 @@ export class DbService {
         Item: { exchange, endpoint, ...entity },
       })
       .promise();
+  }
+
+  async getHealthchecksByExchange(exchange: string) {
+    const params: ScanInput = {
+      TableName: 'endpoint_healthchecks',
+      FilterExpression: '#ex = :exch',
+      ProjectionExpression: '#ex, endpoint, #st, responseTime, #tsmp',
+      ExpressionAttributeNames: {
+        '#ex': 'exchange',
+        '#st': 'status',
+        '#tsmp': 'timestamp',
+      },
+      ExpressionAttributeValues: {
+        ':exch': exchange,
+      },
+    };
+    return this._recursiveScan(params);
+  }
+
+  private async _recursiveScan(
+    params: ScanInput,
+    results: ItemList = [],
+  ): Promise<ItemList> {
+    const { Items, LastEvaluatedKey } = await ddb.scan(params).promise();
+    results.push(...Items);
+    if (!LastEvaluatedKey) return results;
+    params.ExclusiveStartKey = LastEvaluatedKey;
+    return this._recursiveScan(params, results);
   }
 }

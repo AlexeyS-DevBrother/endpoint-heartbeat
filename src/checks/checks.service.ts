@@ -55,13 +55,16 @@ export class ChecksService {
   }
 
   async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
-    const headers = this._getAuthHeader(exchange);
+    const headers = await this._getAuthHeader(exchange);
     const promises = endpoints.map((endpoint) => {
       const { getUrl, method } = endpoint;
       const url = getUrl(exchange);
       const args: RequestArgs = { url, exchange, method };
       if (endpoint.tokenRequired) args.headers = headers;
       if (method === HTTP_METHODS.POST) args.payload = endpoint.payload;
+
+      // console.log({ url, exchange, method });
+
       return this._makeRequest(args);
     });
     await Promise.all(promises);
