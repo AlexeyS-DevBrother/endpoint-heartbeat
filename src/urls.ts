@@ -6,7 +6,7 @@ const tradeServiceURL = 'https://trade-service-sls.cryptosrvc.com';
 const tokenURL =
   'https://authentication.cryptosrvc.com/api/user_authentication';
 
-export const urls = {
+const urls = {
   instruments: exchangeDataURL + '/instruments',
   currencies: exchangeDataURL + '/currencies',
   quotes: exchangeDataURL + '/quotes',
@@ -24,6 +24,7 @@ export const urls = {
   refreshTokenURL: tokenURL + '/refreshAccessToken',
 };
 
+export const getAccessTokenURL = urls.getAccessTokenURL;
 export const endpoints: Endpoint[] = [
   {
     getUrl: (s) => urls.instruments + `?exchange=${s}`,
