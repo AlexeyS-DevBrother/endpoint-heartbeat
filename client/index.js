@@ -10,38 +10,31 @@ const getChecks = async () => {
 
 const renderChecksData = async () => {
   const checks = await getChecks();
-  const tableHtml = `<table>
-    <thead>
-      <tr>
-        <th>Health Check</th>
-      </tr>
-    </thead>
-    <tbody id="data">
-      <tr>
-        <td><strong>Endpoint</strong></td>
-        <td><strong>Status</strong></td>
-        <td><strong>Response time</strong></td>
-        <td><strong>Timestamp</strong></td>
-      </tr>
-    </tbody>
-  </table>`;
+  const head = `
+    <div class="col"><strong>Endpoint</strong></div>
+    <div class="col"><strong>Status</strong></div>
+    <div class="col"><strong>Response Time</strong></div>
+    <div class="col"><strong>Date</strong></div>
+    <div class="col"><strong>Time</strong></div>
+  `;
   const dataContainer = document.querySelector('.data-container');
   dataContainer.innerHTML = '';
-  dataContainer.insertAdjacentHTML('beforeend', tableHtml);
-
+  dataContainer.insertAdjacentHTML('beforeend', head);
   let tableRows = '';
   for (const check of checks) {
     const { endpoint, responseTime, status, timestamp } = check;
-    const str = `<tr>
-      <td class="service-endpoint">${endpoint}</td>
-      <td class="service-status">${status}</td>
-      <td class="service-responseTime">${responseTime}</td>
-      <td class="service-timestamp">${new Date(timestamp)}</td>
-    </tr>`;
+    const rawDate = new Date(timestamp);
+    const date = rawDate.toLocaleDateString();
+    const time = rawDate.toLocaleTimeString();
+    const str = `
+      <div class="col">${endpoint}</div>
+      <div class="col">${status}</div>
+      <div class="col">${responseTime}</div>
+      <div class="col">${date}</div>
+      <div class="col">${time}</div>`;
     tableRows += str;
   }
-  const target = document.querySelector('#data');
-  target.insertAdjacentHTML('beforeend', tableRows);
+  dataContainer.insertAdjacentHTML('beforeend', tableRows);
 };
 
 window.onload = () => {
@@ -54,12 +47,14 @@ window.onload = () => {
     classList.remove('stop');
     clearInterval(interval);
     button.textContent = 'Get results';
+    dataContainer.classList.remove('active');
   };
 
   const setActive = (classList, button) => {
     classList.add('stop');
     button.textContent = 'Stop';
     renderChecksData();
+    dataContainer.classList.add('active');
     interval = setInterval(renderChecksData, DELAY);
   };
 
