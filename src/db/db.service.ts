@@ -51,11 +51,14 @@ export class DbService {
     const params: ScanInput = {
       TableName: 'endpoint_healthchecks',
       FilterExpression: '#ex = :exch',
-      ProjectionExpression: '#ex, endpoint, #st, responseTime, #tsmp',
+      ProjectionExpression:
+        '#ex, endpoint, #st, responseTime, #tsmp, #res, #req',
       ExpressionAttributeNames: {
         '#ex': 'exchange',
         '#st': 'status',
         '#tsmp': 'timestamp',
+        '#res': 'response',
+        '#req': 'request',
       },
       ExpressionAttributeValues: {
         ':exch': exchange,

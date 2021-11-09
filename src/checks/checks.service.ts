@@ -38,20 +38,24 @@ export class ChecksService {
         method === HTTP_METHODS.POST
           ? [url, payload, { headers }]
           : [url, { headers }];
-      const { request: req, ...res } = await axios[method](...args);
+      const { request: _, ...res } = await axios[method](...args);
       responseTime = Date.now() - timestamp;
-      (response = res), (request = req), (status = res.status);
+      (response = res), (status = res.status);
     } catch (err) {
       responseTime = Date.now() - timestamp;
-      if (!timestamp) throw new BadRequestException('Exchange is invalid!');
-      const { request: req, ...res } = err.response;
-      if (res.status === 404)
+      if (!timestamp || err.status === 404)
         throw new BadRequestException('Exchange is invalid!');
-      (response = res), (request = req), (status = res.status);
+      const { request: _, ...res } = err;
+      (response = res), (status = res.status);
     }
-    request = this.utilsService.removeCircular(request);
+    // eslint-disable-next-line prefer-const
+    request = { query: this.utilsService.parseQuery(url), body: payload };
     const entity = { request, response, responseTime, status, timestamp };
-    await this.dbService.save(exchange, url, entity);
+    try {
+      await this.dbService.save(exchange, url, entity);
+    } catch (err) {
+      console.log(err, new Date().toLocaleString(), url, entity);
+    }
   }
 
   async checkEndpoints(exchange: string, endpoints: Endpoint[]) {

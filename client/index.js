@@ -16,7 +16,8 @@ const renderChecksData = async () => {
     <div class="col"><strong>Response Time</strong></div>
     <div class="col"><strong>Date</strong></div>
     <div class="col"><strong>Time</strong></div>
-  `;
+    <div class="col"><strong>Response</strong></div>
+    <div class="col"><strong>Request</strong></div>`;
   const dataContainer = document.querySelector('.data-container');
   dataContainer.innerHTML = '';
   dataContainer.insertAdjacentHTML('beforeend', head);
@@ -31,10 +32,28 @@ const renderChecksData = async () => {
       <div class="col">${status}</div>
       <div class="col">${responseTime}</div>
       <div class="col">${date}</div>
-      <div class="col">${time}</div>`;
+      <div class="col">${time}</div>
+      <div class="col">
+        <a class="check-object" data-endpoint="${endpoint}" data-type="response" href="#">
+          see object
+        </a>
+      </div>
+      <div class="col">
+        <a class="check-object" data-endpoint="${endpoint}" data-type="request" href="#">
+          see object
+        </a>
+      </div>`; // /request?url='${endpoint}'
     tableRows += str;
   }
   dataContainer.insertAdjacentHTML('beforeend', tableRows);
+  const checkObjects = document.querySelectorAll('.check-object');
+  checkObjects.forEach((checkObject) =>
+    checkObject.addEventListener('click', ({ target }) => {
+      const { endpoint, type } = target.dataset;
+      const check = checks.find((check) => check.endpoint === endpoint);
+      console.log(check[type]);
+    }),
+  );
 };
 
 window.onload = () => {
