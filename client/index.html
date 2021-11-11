@@ -5,31 +5,52 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Abel&family=Source+Code+Pro&display=swap" rel="stylesheet"> 
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="index.js"></script>
   <title>Endpoint Health Checker</title>
 </head>
 
 <body>
-  <div>
-    <p>Choose the exchange and click the button below to retreive the services healthcheck results:</p>
-    <select name="exchange" id="exchange">
-      <option value="DEMO">DEMO</option>
-      <option value="">Option 2</option>
-      <option value="">Option 3</option>
-      <option value="">Option 4</option>
-      <option value="">Option 5</option>
-    </select>
-  </div>
-  <div class="button-container">
-    <button class="control-button get-results">Get results</button>
-    <button class="control-button clear">Clear</button>
-  </div>
-  <hr />
-  <div class="data-container">
-    <h4>Nothing to display</h4>
-    <p>Click <code>Get results</code> button to start polling services.</p>
-  </div>
+  <main class="container">
+    <header class="row">
+      <p class="center-align">Choose the exchange and click the button below to retreive the services healthcheck results:</p>
+      <div class="input-field col s4 offset-s4 black-text">
+        <select>
+          <option class="black-text" value="DEMO">DEMO</option>
+          <option class="black-text" value="">Option 1</option>
+          <option class="black-text" value="">Option 2</option>
+        </select>
+        <label class="black-text">Exchange</label>
+      </div>
+    </header>
+    <div class="button-container row">
+      <div class="col s6 offset-s3">
+        <div class="col s4 center-align">
+          <a id="start" class="control-button waves-effect waves-light btn-large green accent-4">Start</a>
+        </div>
+        <div class="col s4 center-align">
+          <a id="stop"  class="control-button waves-effect waves-light btn-large red accent-3 disabled">Stop</a>
+        </div>
+        <div class="col s4 center-align">
+          <a id="clear" class="control-button waves-effect waves-light btn-large blue lighten-1">Clear</a>
+        </div>
+      </div>
+    </div>
+    <hr />
+    <div class="flex-container">
+      <div class="data-container row">
+        <h3 class="center-align">Nothing to display</h3>
+        <p class="center-align">Click <code>Start</code> button to start polling services.</p>
+      </div>
+    </div>
+    <div id="check-object-container"></div>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
 </body>
 
 </html>

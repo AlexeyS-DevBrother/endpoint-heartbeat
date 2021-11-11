@@ -1,43 +1,100 @@
-.button-container {
-  width: 250px;
-  margin-top: 20px;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
+@import url('https://fonts.googleapis.com/css2?family=Abel&family=Source+Code+Pro&display=swap');
+
+* {
+  transition: all ease-out .2s;
 }
 
-.control-button {
-  padding: 10px;
-  cursor: pointer;
-  border: 1px solid #000;
-  width: 100px;
-  height: 50px;
-  border-radius: 5px;
+body{
+  z-index: 1;
+}
+
+body, input {
+  font-family: 'Abel', sans-serif;
+  font-size: 24px;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-image: url('./img/server-room-purple-uhd-4k-wallpaper.jpg');
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: top;
+  opacity: 0.1;
+  width: 100%;
+}
+
+main {
+  height: 320px;
+  width: 320px;
+  margin: auto;
+  background-color: transparent;
+  z-index: -1;
+  opacity: 1;
+  filter:alpha(opacity=100);
+}
+
+code {
+  font-family: 'Source Code Pro', monospace;
 }
 
 .control-button:hover {
-  opacity: .8;
+  box-shadow: 
+    rgba(0, 0, 0, 0.3) 0px 19px 38px, 
+    rgba(0, 0, 0, 0.22) 0px 15px 12px;
 }
 
-.get-results {
-  background-color: orange;
+div.input-field label.black-text {
+  font-size: 14px;
 }
 
-.stop {
-  background-color: red;
+table {
+  font-size: .7em;
 }
 
-div.data-container.active {
-  min-width: 1400px;
-  width: 70%;
-  display: grid;
-  grid-template-columns: 12fr 1fr repeat(2, 3fr 2fr) 2fr;
-  border-right: 1px solid #000;
+div#check-object-container {
+  font-size: .5em;
+}
+
+div#check-object-container > pre {
+  background-color: rgba(0, 0, 0, .1);
+  height: 50em;
+  border-radius: 1em;
+  overflow: auto;
+  padding: 20px;
+  margin-bottom: 50px;
+}
+
+.check-object-link:hover {
+  box-shadow: 
+    rgba(0, 0, 0, 0.3) 0px 9px 19px, 
+    rgba(0, 0, 0, 0.22) 0px 7px 6px;;
+}
+
+.dropdown-content li > a, .dropdown-content li > span {
+  color: #000;
+}
+
+.select-wrapper input.select-dropdown {
+  font-size: .95em;
+  border-bottom: 1px solid rgba(0, 0, 0, .2);
+}
+
+.select-wrapper input.select-dropdown:focus {
   border-bottom: 1px solid #000;
 }
 
-div.col {
-  border-top: 1px solid #000;
-  border-left: 1px solid #000;
-  padding: 5px;
+i.close-object-info {
+  color: rgba(0, 0, 0, .2);
+  margin-top: 10px;
+  cursor: pointer;
+}
+
+i.close-object-info:hover {
+  color: #000;
 }

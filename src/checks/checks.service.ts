@@ -17,7 +17,7 @@ export class ChecksService {
     private utilsService: UtilsService,
   ) {}
 
-  @ThruCacheAsync(1800 * 1000)
+  @ThruCacheAsync(15 * 60 * 1000)
   getToken(tokenPayload: TokenPayload) {
     return this.authService.getToken(tokenPayload);
   }
@@ -30,7 +30,7 @@ export class ChecksService {
 
   private async _makeRequest(requestArgs: RequestArgs) {
     let timestamp: number, responseTime: number, status: number;
-    let request, response;
+    let response;
     const { exchange, method, payload, headers, url } = requestArgs;
     try {
       timestamp = Date.now();
@@ -43,13 +43,24 @@ export class ChecksService {
       (response = res), (status = res.status);
     } catch (err) {
       responseTime = Date.now() - timestamp;
+      // console.log(err, url, new Date().toLocaleString());
+      if (err.code === 'EAI_AGAIN' || err.code === 'ECONNRESET') {
+        console.log(
+          `ERROR: No Internet connection.\n
+          Resource: ${url}\n
+          Time:${new Date().toLocaleString()}\n\n`,
+        );
+        return;
+      }
+      if (err.response?.status === 401) return;
       if (!timestamp || err.status === 404)
         throw new BadRequestException('Exchange is invalid!');
       const { request: _, ...res } = err;
+      const { request: __, ...resWithoutReq } = res.response;
+      res.response = resWithoutReq;
       (response = res), (status = res.status);
     }
-    // eslint-disable-next-line prefer-const
-    request = { query: this.utilsService.parseQuery(url), body: payload };
+    const request = { query: this.utilsService.parseQuery(url), body: payload };
     const entity = { request, response, responseTime, status, timestamp };
     try {
       await this.dbService.save(exchange, url, entity);

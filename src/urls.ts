@@ -82,9 +82,9 @@ export const endpoints: Endpoint[] = [
     tokenRequired: false,
     method: HTTP_METHODS.POST,
     payload: {
-      username: '',
-      password: '',
-      exchange: '',
+      username: 'username',
+      password: 'password',
+      exchange: 'DEMO',
     },
   },
 ];
