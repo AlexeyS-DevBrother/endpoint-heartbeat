@@ -8,6 +8,8 @@ import axios from 'axios';
 import { Endpoint } from 'src/types/endpoint.interface';
 import { HTTP_METHODS } from 'src/enums/http-methods.enum';
 import { RequestArgs } from 'src/types/request-args.interface';
+import { IncomingWebhook } from '@slack/webhook';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class ChecksService {
@@ -15,6 +17,7 @@ export class ChecksService {
     private authService: AuthService,
     private dbService: DbService,
     private utilsService: UtilsService,
+    private configService: ConfigService,
   ) {}
 
   @ThruCacheAsync(15 * 60 * 1000)
@@ -43,12 +46,11 @@ export class ChecksService {
       (response = res), (status = res.status);
     } catch (err) {
       responseTime = Date.now() - timestamp;
-      // console.log(err, url, new Date().toLocaleString());
       if (err.code === 'EAI_AGAIN' || err.code === 'ECONNRESET') {
         console.log(
-          `ERROR: No Internet connection.\n
-          Resource: ${url}\n
-          Time:${new Date().toLocaleString()}\n\n`,
+          `ERROR: No Internet connection.
+          Resource: ${url}
+          Time: ${new Date().toLocaleString()}\n\n`,
         );
         return;
       }
@@ -60,12 +62,17 @@ export class ChecksService {
       res.response = resWithoutReq;
       (response = res), (status = res.status);
     }
+    if (status >= 400) {
+      const { Item } = await this.dbService.getHealthCheck(exchange, url);
+      if (Item.status !== status) await this.sendSlackNotification(url, status);
+    }
     const request = { query: this.utilsService.parseQuery(url), body: payload };
     const entity = { request, response, responseTime, status, timestamp };
     try {
       await this.dbService.save(exchange, url, entity);
     } catch (err) {
-      console.log(err, new Date().toLocaleString(), url, entity);
+      console.log('Error saving entity to DB!');
+      console.log(url, new Date().toLocaleString(), err, entity);
     }
   }
 
@@ -80,5 +87,23 @@ export class ChecksService {
       return this._makeRequest(args);
     });
     await Promise.all(promises);
+  }
+
+  async sendSlackNotification(endpoint: string, status: number) {
+    const url = this.configService.get('slack_webhook_url');
+    const webhook = new IncomingWebhook(url);
+    try {
+      await webhook.send({
+        text: `Alert!\n
+        Endpoint ${endpoint} returned status ${status}!\n
+        Date: ${new Date().toUTCString()}`,
+      });
+    } catch (err) {
+      console.log(
+        `Error thrown by webhook!\n
+        Date:${new Date().toUTCString()}\n
+        ${err}\n\n`,
+      );
+    }
   }
 }

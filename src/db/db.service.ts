@@ -77,4 +77,17 @@ export class DbService {
     params.ExclusiveStartKey = LastEvaluatedKey;
     return this._recursiveScan(params, results);
   }
+
+  async getHealthCheck(exchange: string, endpoint: string) {
+    return ddb
+      .get({
+        TableName: 'endpoint_healthchecks',
+        Key: { exchange, endpoint },
+        ProjectionExpression: '#st',
+        ExpressionAttributeNames: {
+          '#st': 'status',
+        },
+      })
+      .promise();
+  }
 }
