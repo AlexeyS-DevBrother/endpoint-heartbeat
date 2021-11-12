@@ -1,6 +1,3 @@
-import { HTTP_METHODS } from './enums/http-methods.enum';
-import { Endpoint } from './types/endpoint.interface';
-
 const exchangeDataURL = 'https://exchange-data-service.cryptosrvc.com/v1';
 const tradeServiceURL = 'https://trade-service-sls.cryptosrvc.com';
 const tokenURL =
@@ -25,66 +22,3 @@ const urls = {
 };
 
 export const getAccessTokenURL = urls.getAccessTokenURL;
-export const endpoints: Endpoint[] = [
-  {
-    getUrl: (s) => urls.instruments + `?exchange=${s}`,
-    tokenRequired: true,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: (s) => urls.currencies + `?exchange=${s}`,
-    tokenRequired: false,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: (s) => urls.quotes + `?exchange=${s}`,
-    tokenRequired: false,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.swagger,
-    tokenRequired: false,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.trade.accounts,
-    tokenRequired: true,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.trade.transactions,
-    tokenRequired: true,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.trade.orders.open,
-    tokenRequired: true,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.trade.orders.closed,
-    tokenRequired: true,
-    method: HTTP_METHODS.GET,
-  },
-  {
-    getUrl: () => urls.rfqQuote,
-    tokenRequired: true,
-    method: HTTP_METHODS.POST,
-    payload: {
-      instrument: 'BTCUSDT',
-      quantity: 0.001,
-      fees_in_price: true,
-      dry_run: true,
-    },
-  },
-  {
-    getUrl: () => urls.getAccessTokenURL,
-    tokenRequired: false,
-    method: HTTP_METHODS.POST,
-    payload: {
-      username: 'username',
-      password: 'password',
-      exchange: 'DEMO',
-    },
-  },
-];

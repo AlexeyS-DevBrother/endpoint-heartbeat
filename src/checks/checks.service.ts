@@ -48,9 +48,7 @@ export class ChecksService {
       responseTime = Date.now() - timestamp;
       if (err.code === 'EAI_AGAIN' || err.code === 'ECONNRESET') {
         console.log(
-          `ERROR: No Internet connection.
-          Resource: ${url}
-          Time: ${new Date().toLocaleString()}\n\n`,
+          `ERROR: No Internet connection.\nResource: ${url}\nTime: ${new Date().toLocaleString()}\n\n`,
         );
         return;
       }
@@ -62,7 +60,7 @@ export class ChecksService {
       res.response = resWithoutReq;
       (response = res), (status = res.status);
     }
-    if (status >= 400) {
+    if (status >= 500) {
       const { Item } = await this.dbService.getHealthCheck(exchange, url);
       if (Item.status !== status) await this.sendSlackNotification(url, status);
     }
@@ -79,10 +77,11 @@ export class ChecksService {
   async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
     const headers = await this._getAuthHeader(exchange);
     const promises = endpoints.map((endpoint) => {
-      const { getUrl, method } = endpoint;
-      const url = getUrl(exchange);
+      const { url, method, exchangeRequired } = endpoint;
       const args: RequestArgs = { url, exchange, method };
       if (endpoint.tokenRequired) args.headers = headers;
+      if (exchangeRequired)
+        args.url = this.utilsService.addQueryParams(url, { exchange });
       if (method === HTTP_METHODS.POST) args.payload = endpoint.payload;
       return this._makeRequest(args);
     });
@@ -100,8 +99,8 @@ export class ChecksService {
       });
     } catch (err) {
       console.log(
-        `Error thrown by webhook!\n
-        Date:${new Date().toUTCString()}\n
+        `Error thrown by webhook!
+        Date:${new Date().toUTCString()}
         ${err}\n\n`,
       );
     }

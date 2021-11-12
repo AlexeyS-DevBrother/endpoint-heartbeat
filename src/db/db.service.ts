@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { TokenPayload } from '../types/token-payload.interface';
 import { ICredentials } from '../types/credentials.interface';
 import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
+import { Endpoint } from '../types/endpoint.interface';
 
 type ScanInput = DynamoDB.DocumentClient.ScanInput;
 type ItemList = DynamoDB.DocumentClient.ItemList;
@@ -25,6 +26,11 @@ export class DbService {
       const exchange = item.id;
       return { ...creds, exchange };
     });
+  }
+
+  getEndpointsByScanning() {
+    const params: ScanInput = { TableName: 'endpoints' };
+    return this._recursiveScan(params) as Promise<Endpoint[]>;
   }
 
   async getCredsById(id: string): Promise<ICredentials> {
