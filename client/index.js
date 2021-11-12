@@ -40,14 +40,16 @@ const renderChecksData = async () => {
         <td>${date}</td>
         <td>${time}</td>
         <td>
-          <a class="check-object-link waves-effect waves-light btn light-green accent-4 black-text" 
+          <a class="check-object-link waves-effect waves-light btn modal-trigger light-green accent-4 black-text" 
+            href="#modal"
             data-endpoint="${endpoint}" 
             data-type="response">
               See object
           </a>
         </td>
         <td>
-          <a class="check-object-link waves-effect waves-light btn light-green accent-4 black-text" 
+          <a class="check-object-link waves-effect waves-light btn modal-trigger light-green accent-4 black-text" 
+            href="#modal"
             data-endpoint="${endpoint}" 
             data-type="request">
               See object
@@ -67,25 +69,16 @@ const displayCheckObj = ({ target }) => {
   const { endpoint, type } = target.dataset;
   const check = checks.find((check) => check.endpoint === endpoint);
   const obj = check[type];
-  if (obj.config?.headers) delete obj.config.headers['Authorization']; // for the sake of security
   const json = JSON.stringify(obj, undefined, 2);
-  const checkObjContainer = document.querySelector('#check-object-container');
-  checkObjContainer.innerHTML = '';
-  const headStr = `<div class="row valign-wrapper">
-      <h5 class="col s10">${type.toUpperCase()} for ${endpoint}</h5>
-      <div class="col s1 offset-s1 right-align">
-        <i class="material-icons close-object-info">clear</i>
-      </div>
+  const modalContent = `<div class="modal-content">
+      <p>${type.toUpperCase()} for ${endpoint}</p>
+      <pre><code>${json}</code></pre>
+    </div>
+    <div class="modal-footer">
+      <a href="#!" class="modal-close waves-effect waves-green btn-flat">Close</a>
     </div>`;
-  const codeStr = `<pre><code>${json}</code></pre>`;
-  checkObjContainer.insertAdjacentHTML('beforeend', headStr + codeStr);
-  checkObjContainer.querySelectorAll('.close-object-info').forEach((el) => {
-    el.addEventListener('click', hideCheckObj);
-  });
-};
-
-const hideCheckObj = () => {
-  document.querySelector('#check-object-container').innerHTML = '';
+  const modal = document.querySelector('#modal');
+  modal.innerHTML = modalContent;
 };
 
 window.onload = () => {

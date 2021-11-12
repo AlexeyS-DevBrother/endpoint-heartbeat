@@ -57,17 +57,17 @@ table {
   font-size: .7em;
 }
 
-div#check-object-container {
-  font-size: .5em;
+div#modal.modal.open {
+  font-size: 1em;
+  max-height: 85%;
 }
 
-div#check-object-container > pre {
+div#modal pre {
+  font-size: .5em;
   background-color: rgba(0, 0, 0, .1);
-  height: 50em;
-  border-radius: 1em;
+  height: 50vh;
   overflow: auto;
-  padding: 20px;
-  margin-bottom: 50px;
+  padding: 10px;
 }
 
 .check-object-link:hover {
@@ -87,14 +87,4 @@ div#check-object-container > pre {
 
 .select-wrapper input.select-dropdown:focus {
   border-bottom: 1px solid #000;
-}
-
-i.close-object-info {
-  color: rgba(0, 0, 0, .2);
-  margin-top: 10px;
-  cursor: pointer;
-}
-
-i.close-object-info:hover {
-  color: #000;
 }
