@@ -60,7 +60,7 @@ export class ChecksService {
       res.response = resWithoutReq;
       (response = res), (status = res.status);
     }
-    if (status >= 500) {
+    if (status >= 400) {
       const { Item } = await this.dbService.getHealthCheck(exchange, url);
       if (Item.status !== status) await this.sendSlackNotification(url, status);
     }

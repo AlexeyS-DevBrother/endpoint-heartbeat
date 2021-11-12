@@ -53,6 +53,17 @@ export class DbService {
       .promise();
   }
 
+  async saveEndpoint(payload: Endpoint) {
+    const { $response } = await ddb
+      .put({
+        TableName: 'endpoints',
+        Item: payload,
+      })
+      .promise();
+    console.log($response);
+    return 'NEW ENDPOINT SAVED!';
+  }
+
   async getHealthchecksByExchange(exchange: string) {
     const params: ScanInput = {
       TableName: 'endpoint_healthchecks',

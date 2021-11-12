@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { DbService } from './db/db.service';
 import { ChecksService } from './checks/checks.service';
+import { Endpoint } from './types/endpoint.interface';
 
 @Injectable()
 export class AppService implements OnModuleInit {
@@ -33,5 +34,9 @@ export class AppService implements OnModuleInit {
 
   getChecks(exchange: string) {
     return this.dbService.getHealthchecksByExchange(exchange);
+  }
+
+  addEndpoint(payload: Endpoint) {
+    return this.dbService.saveEndpoint(payload);
   }
 }
