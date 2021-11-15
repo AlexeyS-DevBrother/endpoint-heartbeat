@@ -4,6 +4,7 @@ import { TokenPayload } from '../types/token-payload.interface';
 import { ICredentials } from '../types/credentials.interface';
 import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
 import { Endpoint } from '../types/endpoint.interface';
+import { Payload } from '../types/payload.entity';
 
 type ScanInput = DynamoDB.DocumentClient.ScanInput;
 type ItemList = DynamoDB.DocumentClient.ItemList;
@@ -54,13 +55,7 @@ export class DbService {
   }
 
   async saveEndpoint(payload: Endpoint) {
-    const { $response } = await ddb
-      .put({
-        TableName: 'endpoints',
-        Item: payload,
-      })
-      .promise();
-    console.log($response);
+    await ddb.put({ TableName: 'endpoints', Item: payload }).promise();
     return 'NEW ENDPOINT SAVED!';
   }
 
@@ -96,6 +91,7 @@ export class DbService {
   }
 
   async getHealthCheck(exchange: string, endpoint: string) {
+    // TODO: method should return an Item, not a DynamoDB response object
     return ddb
       .get({
         TableName: 'endpoint_healthchecks',
@@ -106,5 +102,22 @@ export class DbService {
         },
       })
       .promise();
+  }
+
+  async getEndpointPayload(exchange: string, endpoint: string) {
+    const { Item } = await ddb
+      .get({
+        TableName: 'endpoint_payloads',
+        Key: { exchange, endpoint },
+        ProjectionExpression: '#pld',
+        ExpressionAttributeNames: { '#pld': 'payload' },
+      })
+      .promise();
+    return Item;
+  }
+
+  async savePayload(payload: Payload) {
+    await ddb.put({ TableName: 'endpoint_payloads', Item: payload }).promise();
+    return `PAYLOAD FOR ${payload.endpoint} AND ${payload.exchange} SAVED!`;
   }
 }

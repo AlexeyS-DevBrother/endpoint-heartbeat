@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query, UsePipes } from '@nestjs/common';
 import { AppService } from './app.service';
 import { TransformEndpointPayload } from './pipes/transform-endpoint-payload.pipe';
 import { Endpoint } from './types/endpoint.interface';
+import { Payload } from './types/payload.entity';
 
 @Controller()
 export class AppController {
@@ -16,5 +17,10 @@ export class AppController {
   @UsePipes(TransformEndpointPayload)
   addEndpoint(@Body() payload: Endpoint) {
     return this.appService.addEndpoint(payload);
+  }
+
+  @Post('/payload')
+  addPayload(@Body() payload: Payload) {
+    return this.appService.addPayload(payload);
   }
 }

@@ -76,13 +76,17 @@ export class ChecksService {
 
   async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
     const headers = await this._getAuthHeader(exchange);
-    const promises = endpoints.map((endpoint) => {
+    const promises = endpoints.map(async (endpoint) => {
       const { url, method, exchangeRequired } = endpoint;
       const args: RequestArgs = { url, exchange, method };
       if (endpoint.tokenRequired) args.headers = headers;
       if (exchangeRequired)
         args.url = this.utilsService.addQueryParams(url, { exchange });
-      if (method === HTTP_METHODS.POST) args.payload = endpoint.payload;
+      if (method === HTTP_METHODS.POST) {
+        const item = await this.dbService.getEndpointPayload(exchange, url);
+        if (!item) return;
+        args.payload = item.payload;
+      }
       return this._makeRequest(args);
     });
     await Promise.all(promises);
