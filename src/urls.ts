@@ -19,6 +19,8 @@ const urls = {
   rfqQuote: 'https://rfq.cryptosrvc.com/v1/quote',
   getAccessTokenURL: tokenURL + '/exchangeToken',
   refreshTokenURL: tokenURL + '/refreshAccessToken',
+  getUserMfaSettings: tokenURL + '/getUserMfaSettings',
 };
 
 export const getAccessTokenURL = urls.getAccessTokenURL;
+export const getUserMfaSettings = urls.getUserMfaSettings;

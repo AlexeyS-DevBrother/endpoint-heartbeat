@@ -30,11 +30,14 @@ const renderChecksData = async () => {
   let tableRows = '';
   for (const check of checks) {
     const { endpoint, responseTime, status, timestamp } = check;
+    const delimIndex = endpoint.indexOf('?');
+    const hasQueryParams = delimIndex !== -1;
+    const url = hasQueryParams ? endpoint.substring(0, delimIndex) : endpoint;
     const rawDate = new Date(timestamp);
     const date = rawDate.toLocaleDateString();
     const time = rawDate.toLocaleTimeString();
     const str = `<tr>
-        <td>${endpoint}</td>
+        <td>${url}</td>
         <td>${status}</td>
         <td>${responseTime}</td>
         <td>${date}</td>
