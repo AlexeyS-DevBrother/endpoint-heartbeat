@@ -91,8 +91,7 @@ export class DbService {
   }
 
   async getHealthCheck(exchange: string, endpoint: string) {
-    // TODO: method should return an Item, not a DynamoDB response object
-    return ddb
+    const { Item } = await ddb
       .get({
         TableName: 'endpoint_healthchecks',
         Key: { exchange, endpoint },
@@ -102,6 +101,7 @@ export class DbService {
         },
       })
       .promise();
+    return Item;
   }
 
   async getEndpointPayload(exchange: string, endpoint: string) {

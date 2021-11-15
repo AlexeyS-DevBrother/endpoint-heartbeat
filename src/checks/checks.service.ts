@@ -61,8 +61,8 @@ export class ChecksService {
       (response = res), (status = res.status);
     }
     if (status >= 400) {
-      const { Item } = await this.dbService.getHealthCheck(exchange, url);
-      if (Item.status !== status) await this.sendSlackNotification(url, status);
+      const item = await this.dbService.getHealthCheck(exchange, url);
+      if (item.status !== status) await this.sendSlackNotification(url, status);
     }
     const request = { query: this.utilsService.parseQuery(url), body: payload };
     const entity = { request, response, responseTime, status, timestamp };
