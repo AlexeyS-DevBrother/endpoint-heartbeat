@@ -10,6 +10,10 @@ import { HTTP_METHODS } from 'src/enums/http-methods.enum';
 import { RequestArgs } from 'src/types/request-args.interface';
 import { IncomingWebhook } from '@slack/webhook';
 import { ConfigService } from '@nestjs/config';
+import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
+import { quotesURL, tradeAccountsURL, tradeOrderURL } from '../urls';
+import { ResolveType } from '../types/resolve.type';
+import { response } from 'express';
 
 @Injectable()
 export class ChecksService {
@@ -36,11 +40,11 @@ export class ChecksService {
     let response;
     const { exchange, method, payload, headers, url } = requestArgs;
     try {
-      timestamp = Date.now();
       const args: [string, any, any?] =
         method === HTTP_METHODS.POST
           ? [url, payload, { headers }]
           : [url, { headers }];
+      timestamp = Date.now();
       const { request: _, ...res } = await axios[method](...args);
       responseTime = Date.now() - timestamp;
       (response = res), (status = res.status);
@@ -65,7 +69,13 @@ export class ChecksService {
       if (item.status !== status) await this.sendSlackNotification(url, status);
     }
     const request = { query: this.utilsService.parseQuery(url), body: payload };
-    const entity = { request, response, responseTime, status, timestamp };
+    const entity: IHealthcheckEntity = {
+      request,
+      response,
+      responseTime,
+      status,
+      timestamp,
+    };
     try {
       await this.dbService.save(exchange, url, entity);
     } catch (err) {
@@ -90,6 +100,51 @@ export class ChecksService {
       return this._makeRequest(args);
     });
     await Promise.all(promises);
+  }
+
+  async makeComplexCheck(exchange: string) {
+    const headers = await this._getAuthHeader(exchange);
+    const instrument = 'BTCUSD';
+    const MINIMAL_BTC_QUANTITY = 0.0001;
+
+    const start = Date.now();
+    const tradeAccResponse = await axios.get(tradeAccountsURL, { headers });
+    const tradeAccounts = tradeAccResponse.data as {
+      product: string;
+      balance: { active_balance: number };
+    }[];
+    const btcAcc = tradeAccounts.find(({ product }) => product === 'BTC');
+    if (btcAcc.balance.active_balance < MINIMAL_BTC_QUANTITY)
+      throw new BadRequestException('Insufficcient funds!');
+    const quotesResponse = await axios.get(
+      `${quotesURL}?exchange=${exchange}`,
+      { headers },
+    );
+    const quotes = quotesResponse.data as {
+      pair: string;
+      price_24h_max: string;
+    }[];
+    const quote = quotes.find(({ pair }) => pair === instrument);
+    const max24HPrice = +quote.price_24h_max.split('.')[0];
+    const limit_price = max24HPrice + 0.2 * max24HPrice;
+    const payload = {
+      instrument,
+      quantity: MINIMAL_BTC_QUANTITY,
+      type: 'limit',
+      side: 'sell',
+      limit_price,
+      time_in_force: 'gtc',
+    };
+    const tradeOrderResponse = await axios.post(tradeOrderURL, payload, {
+      headers,
+    });
+    const { order_id } = tradeOrderResponse.data as { order_id: string };
+    const response = await axios.delete(`${tradeOrderURL}/${order_id}`, {
+      headers,
+    });
+    const end = Date.now() - start;
+
+    console.log('order deleted', response.status, response.statusText, end);
   }
 
   async sendSlackNotification(endpoint: string, status: number) {

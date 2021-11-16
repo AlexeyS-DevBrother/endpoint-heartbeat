@@ -13,6 +13,11 @@ export class AppController {
     return this.appService.getChecks(exchange);
   }
 
+  @Get('/complex')
+  makeComplexCheck(@Query('exchange') exchange: string) {
+    return this.appService.makeComplexCheck(exchange);
+  }
+
   @Post('/endpoint')
   @UsePipes(TransformEndpointPayload)
   addEndpoint(@Body() payload: Endpoint) {

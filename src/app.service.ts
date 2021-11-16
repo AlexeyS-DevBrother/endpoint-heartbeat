@@ -44,4 +44,8 @@ export class AppService implements OnModuleInit {
   addPayload(payload: Payload) {
     return this.dbService.savePayload(payload);
   }
+
+  makeComplexCheck(exchange: string) {
+    return this.checksService.makeComplexCheck(exchange);
+  }
 }
