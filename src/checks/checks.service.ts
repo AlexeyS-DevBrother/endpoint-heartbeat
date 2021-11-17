@@ -34,28 +34,6 @@ export class ChecksService {
     return { Authorization: `Bearer ${token}` };
   }
 
-  private async _makeRequest(requestArgs: RequestArgs) {
-    const { method, payload, headers, url } = requestArgs;
-    const args: [string, any, any?] =
-      method === HTTP_METHODS.POST
-        ? [url, payload, { headers }]
-        : [url, { headers }];
-    return axios[method](...args);
-  }
-
-  private async _fetchAndSave(requestArgs: RequestArgs) {
-    let timestamp: number, responseTime: number;
-    try {
-      timestamp = Date.now();
-      const response = await this._makeRequest(requestArgs);
-      responseTime = Date.now() - timestamp;
-      await this._saveResponse(response, requestArgs, timestamp, responseTime);
-    } catch (err) {
-      responseTime = Date.now() - timestamp;
-      await this._processError(err, requestArgs, timestamp, responseTime);
-    }
-  }
-
   async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
     const headers = await this._getAuthHeader(exchange);
     const promises = endpoints.map(async (endpoint) => {
@@ -76,17 +54,11 @@ export class ChecksService {
     await Promise.all(promises);
   }
 
-  private async _checkTradeOrderOperations(
-    exchange: string,
-    requestArgs: RequestArgs,
-  ) {
+  private async _fetchAndSave(requestArgs: RequestArgs) {
     let timestamp: number, responseTime: number;
     try {
       timestamp = Date.now();
-      await this.__getTradeAccounts(exchange);
-      const payload = await this.__getQuotes(exchange);
-      const order_id = await this.__createTradeOrder(payload, exchange);
-      const response = await this.__deleteTradeOrder(order_id, exchange);
+      const response = await this._makeRequest(requestArgs);
       responseTime = Date.now() - timestamp;
       await this._saveResponse(response, requestArgs, timestamp, responseTime);
     } catch (err) {
@@ -95,76 +67,13 @@ export class ChecksService {
     }
   }
 
-  private async __getTradeAccounts(exchange: string) {
-    const MINIMAL_BTC_QUANTITY = 0.0001;
-    const PRODUCT = 'BTC';
-    const headers = await this._getAuthHeader(exchange);
-    const { data } = await this._makeRequest({
-      exchange,
-      method: HTTP_METHODS.GET,
-      url: tradeAccountsURL,
-      headers,
-    });
-    const tradeAccounts = data as {
-      product: string;
-      balance: { active_balance: number };
-    }[];
-    const btcAcc = tradeAccounts.find(({ product }) => product === PRODUCT);
-    if (btcAcc.balance.active_balance < MINIMAL_BTC_QUANTITY)
-      throw new BadRequestException('Insufficcient funds!');
-  }
-
-  private async __getQuotes(exchange: string) {
-    const instrument = 'BTCUSD';
-    const MINIMAL_BTC_QUANTITY = 0.0001;
-    const headers = await this._getAuthHeader(exchange);
-    const { data } = await this._makeRequest({
-      exchange,
-      method: HTTP_METHODS.GET,
-      url: `${quotesURL}?exchange=${exchange}`,
-      headers,
-    });
-    const quotes = data as {
-      pair: string;
-      price_24h_max: string;
-    }[];
-    const quote = quotes.find(({ pair }) => pair === instrument);
-    if (!quote) throw new BadRequestException('Quote not found!');
-    const max24HPrice = +quote.price_24h_max.split('.')[0];
-    const limit_price = max24HPrice * 1.2;
-    return {
-      instrument,
-      limit_price,
-      quantity: MINIMAL_BTC_QUANTITY,
-      type: 'limit',
-      side: 'sell',
-      time_in_force: 'gtc',
-    };
-  }
-
-  private async __createTradeOrder(
-    payload: ResolveType<typeof this.__getQuotes>,
-    exchange: string,
-  ) {
-    const headers = await this._getAuthHeader(exchange);
-    const { data } = await this._makeRequest({
-      exchange,
-      method: HTTP_METHODS.POST,
-      url: tradeOrderURL,
-      headers,
-      payload,
-    });
-    return data.order_id as string;
-  }
-
-  private async __deleteTradeOrder(order_id: string, exchange: string) {
-    const headers = await this._getAuthHeader(exchange);
-    return this._makeRequest({
-      exchange,
-      method: HTTP_METHODS.DELETE,
-      url: tradeOrderURL + '/' + order_id,
-      headers,
-    });
+  private async _makeRequest(requestArgs: RequestArgs) {
+    const { method, payload, headers, url } = requestArgs;
+    const args: [string, any, any?] =
+      method === HTTP_METHODS.POST
+        ? [url, payload, { headers }]
+        : [url, { headers }];
+    return axios[method](...args);
   }
 
   private async _saveResponse(
@@ -231,5 +140,96 @@ export class ChecksService {
         ${err}\n\n`,
       );
     }
+  }
+
+  private async _checkTradeOrderOperations(
+    exchange: string,
+    requestArgs: RequestArgs,
+  ) {
+    let timestamp: number, responseTime: number;
+    try {
+      timestamp = Date.now();
+      await this.__getTradeAccounts(exchange);
+      const payload = await this.__getQuotes(exchange);
+      const order_id = await this.__createTradeOrder(payload, exchange);
+      const response = await this.__deleteTradeOrder(order_id, exchange);
+      responseTime = Date.now() - timestamp;
+      await this._saveResponse(response, requestArgs, timestamp, responseTime);
+    } catch (err) {
+      responseTime = Date.now() - timestamp;
+      await this._processError(err, requestArgs, timestamp, responseTime);
+    }
+  }
+
+  private async __getTradeAccounts(exchange: string) {
+    const MINIMAL_BTC_QUANTITY = this.configService.get('MINIMAL_BTC_QUANTITY');
+    const PRODUCT = this.configService.get('PRODUCT');
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.GET,
+      url: tradeAccountsURL,
+      headers,
+    });
+    const tradeAccounts = data as {
+      product: string;
+      balance: { active_balance: number };
+    }[];
+    const btcAcc = tradeAccounts.find(({ product }) => product === PRODUCT);
+    if (btcAcc.balance.active_balance < MINIMAL_BTC_QUANTITY)
+      throw new BadRequestException('Insufficcient funds!');
+  }
+
+  private async __getQuotes(exchange: string) {
+    const instrument = this.configService.get('QUOTE_INSTRUMENT');
+    const quantity = +this.configService.get('MINIMAL_BTC_QUANTITY');
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.GET,
+      url: `${quotesURL}?exchange=${exchange}`,
+      headers,
+    });
+    const quotes = data as {
+      pair: string;
+      price_24h_max: string;
+    }[];
+    const quote = quotes.find(({ pair }) => pair === instrument);
+    if (!quote) throw new BadRequestException('Quote not found!');
+    const max24HPrice = +quote.price_24h_max.split('.')[0];
+    const limit_price = max24HPrice * 1.2;
+    return {
+      instrument,
+      limit_price,
+      quantity,
+      type: 'limit',
+      side: 'sell',
+      time_in_force: 'gtc',
+    };
+  }
+
+  private async __createTradeOrder(
+    payload: ResolveType<typeof this.__getQuotes>,
+    exchange: string,
+  ) {
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.POST,
+      url: tradeOrderURL,
+      headers,
+      payload,
+    });
+    return data.order_id as string;
+  }
+
+  private async __deleteTradeOrder(order_id: string, exchange: string) {
+    const headers = await this._getAuthHeader(exchange);
+    return this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.DELETE,
+      url: tradeOrderURL + '/' + order_id,
+      headers,
+    });
   }
 }
