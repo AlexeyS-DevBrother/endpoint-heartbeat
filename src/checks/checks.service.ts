@@ -87,7 +87,9 @@ export class ChecksService {
     const { url, payload: body, exchange } = requestArgs;
     const entity: IHealthcheckEntity = {
       request: { query: this.utilsService.parseQuery(url), body },
-      status: response.status,
+      status: response.isAxiosError
+        ? response.response.status
+        : response.status,
       response,
       responseTime,
       timestamp,
@@ -115,22 +117,36 @@ export class ChecksService {
     if (err.response?.status === 401 || err.status === 404) return;
     const { request: _, ...res } = err;
     const { exchange, url } = requestArgs;
-    if (res.status >= 400) await this._notify(exchange, url, res.status);
+    const status = err.isAxiosError ? res.response.status : res.status;
+    const message = res.response.data.message;
+    if (status >= 400) await this._notify(exchange, url, status, message);
+    console.log(res);
     await this._saveResponse(res, requestArgs, timestamp, responseTime);
   }
 
-  private async _notify(exchange: string, url: string, status: number) {
+  private async _notify(
+    exchange: string,
+    url: string,
+    status: number,
+    message: string,
+  ) {
     const item = await this.dbService.getHealthCheck(exchange, url);
-    if (item.status !== status) await this._sendSlackNotification(url, status);
+    if (item.status !== status)
+      await this._sendSlackNotification(url, status, message);
   }
 
-  private async _sendSlackNotification(endpoint: string, status: number) {
+  private async _sendSlackNotification(
+    endpoint: string,
+    status: number,
+    message: string,
+  ) {
     const url = this.configService.get('slack_webhook_url');
     const webhook = new IncomingWebhook(url);
     try {
       await webhook.send({
         text: `Alert!\n
         Endpoint ${endpoint} returned status ${status}!\n
+        Message: ${message}\n
         Date: ${new Date().toUTCString()}`,
       });
     } catch (err) {
