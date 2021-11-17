@@ -13,7 +13,6 @@ import { ConfigService } from '@nestjs/config';
 import { IHealthcheckEntity } from '../types/healthcheck-entity.interface';
 import { quotesURL, tradeAccountsURL, tradeOrderURL } from '../urls';
 import { ResolveType } from '../types/resolve.type';
-import { response } from 'express';
 
 @Injectable()
 export class ChecksService {
@@ -36,44 +35,152 @@ export class ChecksService {
   }
 
   private async _makeRequest(requestArgs: RequestArgs) {
-    let timestamp: number, responseTime: number, status: number;
-    let response;
-    const { exchange, method, payload, headers, url } = requestArgs;
+    const { method, payload, headers, url } = requestArgs;
+    const args: [string, any, any?] =
+      method === HTTP_METHODS.POST
+        ? [url, payload, { headers }]
+        : [url, { headers }];
+    return axios[method](...args);
+  }
+
+  private async _fetchAndSave(requestArgs: RequestArgs) {
+    let timestamp: number, responseTime: number;
     try {
-      const args: [string, any, any?] =
-        method === HTTP_METHODS.POST
-          ? [url, payload, { headers }]
-          : [url, { headers }];
       timestamp = Date.now();
-      const { request: _, ...res } = await axios[method](...args);
+      const response = await this._makeRequest(requestArgs);
       responseTime = Date.now() - timestamp;
-      (response = res), (status = res.status);
+      await this._saveResponse(response, requestArgs, timestamp, responseTime);
     } catch (err) {
       responseTime = Date.now() - timestamp;
-      if (err.code === 'EAI_AGAIN' || err.code === 'ECONNRESET') {
-        console.log(
-          `ERROR: No Internet connection.\nResource: ${url}\nTime: ${new Date().toLocaleString()}\n\n`,
-        );
-        return;
+      await this._processError(err, requestArgs, timestamp, responseTime);
+    }
+  }
+
+  async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
+    const headers = await this._getAuthHeader(exchange);
+    const promises = endpoints.map(async (endpoint) => {
+      const { url, method, exchangeRequired } = endpoint;
+      const args: RequestArgs = { url, exchange, method };
+      if (url === tradeOrderURL)
+        return this._checkTradeOrderOperations(exchange, args);
+      if (endpoint.tokenRequired) args.headers = headers;
+      if (exchangeRequired)
+        args.url = this.utilsService.addQueryParams(url, { exchange });
+      if (method === HTTP_METHODS.POST) {
+        const item = await this.dbService.getEndpointPayload(exchange, url);
+        if (!item) return;
+        args.payload = item.payload;
       }
-      if (err.response?.status === 401) return;
-      if (!timestamp || err.status === 404)
-        throw new BadRequestException('Exchange is invalid!');
-      const { request: _, ...res } = err;
-      const { request: __, ...resWithoutReq } = res.response;
-      res.response = resWithoutReq;
-      (response = res), (status = res.status);
+      return this._fetchAndSave(args);
+    });
+    await Promise.all(promises);
+  }
+
+  private async _checkTradeOrderOperations(
+    exchange: string,
+    requestArgs: RequestArgs,
+  ) {
+    let timestamp: number, responseTime: number;
+    try {
+      timestamp = Date.now();
+      await this.__getTradeAccounts(exchange);
+      const payload = await this.__getQuotes(exchange);
+      const order_id = await this.__createTradeOrder(payload, exchange);
+      const response = await this.__deleteTradeOrder(order_id, exchange);
+      responseTime = Date.now() - timestamp;
+      await this._saveResponse(response, requestArgs, timestamp, responseTime);
+    } catch (err) {
+      responseTime = Date.now() - timestamp;
+      await this._processError(err, requestArgs, timestamp, responseTime);
     }
-    if (status >= 400) {
-      const item = await this.dbService.getHealthCheck(exchange, url);
-      if (item.status !== status) await this.sendSlackNotification(url, status);
-    }
-    const request = { query: this.utilsService.parseQuery(url), body: payload };
+  }
+
+  private async __getTradeAccounts(exchange: string) {
+    const MINIMAL_BTC_QUANTITY = 0.0001;
+    const PRODUCT = 'BTC';
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.GET,
+      url: tradeAccountsURL,
+      headers,
+    });
+    const tradeAccounts = data as {
+      product: string;
+      balance: { active_balance: number };
+    }[];
+    const btcAcc = tradeAccounts.find(({ product }) => product === PRODUCT);
+    if (btcAcc.balance.active_balance < MINIMAL_BTC_QUANTITY)
+      throw new BadRequestException('Insufficcient funds!');
+  }
+
+  private async __getQuotes(exchange: string) {
+    const instrument = 'BTCUSD';
+    const MINIMAL_BTC_QUANTITY = 0.0001;
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.GET,
+      url: `${quotesURL}?exchange=${exchange}`,
+      headers,
+    });
+    const quotes = data as {
+      pair: string;
+      price_24h_max: string;
+    }[];
+    const quote = quotes.find(({ pair }) => pair === instrument);
+    if (!quote) throw new BadRequestException('Quote not found!');
+    const max24HPrice = +quote.price_24h_max.split('.')[0];
+    const limit_price = max24HPrice * 1.2;
+    return {
+      instrument,
+      limit_price,
+      quantity: MINIMAL_BTC_QUANTITY,
+      type: 'limit',
+      side: 'sell',
+      time_in_force: 'gtc',
+    };
+  }
+
+  private async __createTradeOrder(
+    payload: ResolveType<typeof this.__getQuotes>,
+    exchange: string,
+  ) {
+    const headers = await this._getAuthHeader(exchange);
+    const { data } = await this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.POST,
+      url: tradeOrderURL,
+      headers,
+      payload,
+    });
+    return data.order_id as string;
+  }
+
+  private async __deleteTradeOrder(order_id: string, exchange: string) {
+    const headers = await this._getAuthHeader(exchange);
+    return this._makeRequest({
+      exchange,
+      method: HTTP_METHODS.DELETE,
+      url: tradeOrderURL + '/' + order_id,
+      headers,
+    });
+  }
+
+  private async _saveResponse(
+    res: any,
+    requestArgs: RequestArgs,
+    timestamp: number,
+    responseTime: number,
+  ) {
+    const { request: _, ...response } = res;
+    delete res.response?.request;
+    const { url, payload: body, exchange } = requestArgs;
     const entity: IHealthcheckEntity = {
-      request,
+      request: { query: this.utilsService.parseQuery(url), body },
+      status: response.status,
       response,
       responseTime,
-      status,
       timestamp,
     };
     try {
@@ -84,70 +191,31 @@ export class ChecksService {
     }
   }
 
-  async checkEndpoints(exchange: string, endpoints: Endpoint[]) {
-    const headers = await this._getAuthHeader(exchange);
-    const promises = endpoints.map(async (endpoint) => {
-      const { url, method, exchangeRequired } = endpoint;
-      const args: RequestArgs = { url, exchange, method };
-      if (endpoint.tokenRequired) args.headers = headers;
-      if (exchangeRequired)
-        args.url = this.utilsService.addQueryParams(url, { exchange });
-      if (method === HTTP_METHODS.POST) {
-        const item = await this.dbService.getEndpointPayload(exchange, url);
-        if (!item) return;
-        args.payload = item.payload;
-      }
-      return this._makeRequest(args);
-    });
-    await Promise.all(promises);
+  private async _processError(
+    err: any,
+    requestArgs: RequestArgs,
+    timestamp: number,
+    responseTime: number,
+  ) {
+    if (err.code === 'EAI_AGAIN' || err.code === 'ECONNRESET') {
+      console.log(
+        `ERROR: No Internet connection. Time: ${new Date().toLocaleString()}`,
+      );
+      return;
+    }
+    if (err.response?.status === 401 || err.status === 404) return;
+    const { request: _, ...res } = err;
+    const { exchange, url } = requestArgs;
+    if (res.status >= 400) await this._notify(exchange, url, res.status);
+    await this._saveResponse(res, requestArgs, timestamp, responseTime);
   }
 
-  async makeComplexCheck(exchange: string) {
-    const headers = await this._getAuthHeader(exchange);
-    const instrument = 'BTCUSD';
-    const MINIMAL_BTC_QUANTITY = 0.0001;
-
-    const start = Date.now();
-    const tradeAccResponse = await axios.get(tradeAccountsURL, { headers });
-    const tradeAccounts = tradeAccResponse.data as {
-      product: string;
-      balance: { active_balance: number };
-    }[];
-    const btcAcc = tradeAccounts.find(({ product }) => product === 'BTC');
-    if (btcAcc.balance.active_balance < MINIMAL_BTC_QUANTITY)
-      throw new BadRequestException('Insufficcient funds!');
-    const quotesResponse = await axios.get(
-      `${quotesURL}?exchange=${exchange}`,
-      { headers },
-    );
-    const quotes = quotesResponse.data as {
-      pair: string;
-      price_24h_max: string;
-    }[];
-    const quote = quotes.find(({ pair }) => pair === instrument);
-    const max24HPrice = +quote.price_24h_max.split('.')[0];
-    const limit_price = max24HPrice + 0.2 * max24HPrice;
-    const payload = {
-      instrument,
-      quantity: MINIMAL_BTC_QUANTITY,
-      type: 'limit',
-      side: 'sell',
-      limit_price,
-      time_in_force: 'gtc',
-    };
-    const tradeOrderResponse = await axios.post(tradeOrderURL, payload, {
-      headers,
-    });
-    const { order_id } = tradeOrderResponse.data as { order_id: string };
-    const response = await axios.delete(`${tradeOrderURL}/${order_id}`, {
-      headers,
-    });
-    const end = Date.now() - start;
-
-    console.log('order deleted', response.status, response.statusText, end);
+  private async _notify(exchange: string, url: string, status: number) {
+    const item = await this.dbService.getHealthCheck(exchange, url);
+    if (item.status !== status) await this._sendSlackNotification(url, status);
   }
 
-  async sendSlackNotification(endpoint: string, status: number) {
+  private async _sendSlackNotification(endpoint: string, status: number) {
     const url = this.configService.get('slack_webhook_url');
     const webhook = new IncomingWebhook(url);
     try {
